@@ -1,28 +1,68 @@
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/router";
 import Seo from "../components/Seo";
 
 
-export default function Home() {
-  const [movies, setMovies] = useState();
-  useEffect(() => {
-    (async () => {
-      const { results }  = await (
-        await fetch(
-          `/api/movies`
-        )
-      ).json();
-      setMovies(results);
-    })()
-  }, [])
+export default function Home({results}) {
+
+// this method is for client side rendering purposes
+//   const [movies, setMovies] = useState();
+//   useEffect(() => {
+//     (async () => {
+//       const  {results}   = await (
+//         await fetch(
+//           `/api/movies`
+//         )
+//       ).json();
+//       setMovies(results);
+//     })()
+//   }, [])
+
+
+// another way of navigating through pages
+const router = useRouter()
+const onClick = (id,title) => {
+  router.push(
+    {
+      pathname: `/movies/${id}`,
+      query: {
+        title,
+      },
+    },
+    `/movies/${id}`
+  );
+};
+// const onClick = (id, title) => {
+//     router.push(
+//       {
+//         pathname: `/movies/${id}`,
+//         query: {
+//           title,
+//         },
+//       },
+//       `/movies/${id}`
+//     );
+//   };
+
+
   return (
     <div className="container">
       <Seo title="Home" />
-      {!movies && <h4>Loading...</h4>}
-      {movies?.map((movie) => (
-        <div className="movie" key={movie.id}>
-            <img src={`https://image.tmdb.org/t/p/w500/${movie.poster_path}`} />
-             <h4>{movie.original_title}</h4>
-        </div>
+      {/* {!movies && <h4>Loading...</h4>} */}
+      {results?.map((movie) => (   
+            <div onClick={() => onClick(movie.id, movie.original_title)} className="movie" key={movie.id}>
+                <img src={`https://image.tmdb.org/t/p/w500/${movie.poster_path}`} />
+                <Link href={{
+                     pathname: `/movies/${movie.id}`,
+                     query: {
+                         title: movie.original_title,
+                     }
+                }} as={`/movies/${movie.id}`} >
+                    <h4>{movie.original_title}</h4>
+                </Link>
+            </div>        
+        
+
       ))}
             <style jsx>{`
         .container {
@@ -30,6 +70,9 @@ export default function Home() {
           grid-template-columns: 1fr 1fr;
           padding: 20px;
           gap: 20px;
+        }
+        .movie {
+            cursor: pointer;
         }
         .movie img {
           max-width: 100%;
@@ -47,4 +90,20 @@ export default function Home() {
       `}</style>
     </div>
   );
+}
+
+
+// this method is for server side rendering
+// getServerSideProps should not change
+export async function getServerSideProps() {
+
+    const {results}   = await ( await fetch(`http://localhost:3000/api/movies`)).json()
+
+    // this function should return an object with a props key with our data inside
+    // this props are being passed to <Component {...pageProps} /> and the passed down to our page(Index) as a prop 
+    return {
+        props: {
+            results,
+        },
+    }
 }
